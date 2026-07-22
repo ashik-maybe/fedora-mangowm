@@ -18,28 +18,20 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   exit 1
 fi
 
-echo "[+] Step 1/3: Enabling Terra Repository (Required for MangoWM)..."
+echo "[+] Step 1/3: Enabling Terra Repository..."
 dnf install -y --nogpgcheck --repofrompath "terra,https://repos.fyralabs.com/terra$RELEASEVER" terra-release
 
 echo "[+] Step 2/3: Installing MangoWM, Noctalia & Core Wayland Utilities..."
-dnf upgrade -y # Ensure base system is up to date first
-
-# Install ONLY the absolute essentials for the MangoWM + Noctalia experience:
-# 1. The Compositor & Shell
-# 2. A fast, lightweight Wayland-native terminal (foot)
-# 3. Clipboard & Screenshot backends (used by Noctalia)
-# 4. Hardware control (brightness, power) for Noctalia's native OSDs
-# 5. XWayland support for legacy apps
 dnf install -y \
   mangowm noctalia xwayland \
   foot \
   wl-clipboard grim slurp \
   brightnessctl upower
 
-echo "[+] Step 3/3: Deploying System-Wide 'Just Works' Configs..."
+echo "[+] Step 3/3: Deploying System-Wide Configurations..."
 
 # 1. Create Wayland Session Entry for GDM
-mkdir -p /usr/share/wayland-sessions/
+mkdir -p /usr/share/wayland-sessions
 cat <<'EOF' > /usr/share/wayland-sessions/mango.desktop
 [Desktop Entry]
 Name=MangoWM
@@ -49,13 +41,13 @@ Type=Application
 DesktopNames=Mango
 EOF
 
-# 2. MangoWM Base Config (with Premium Touchpad Defaults)
+# 2. MangoWM Base Config
 mkdir -p /etc/mango/config.d /usr/share/mango/config.d
 cat <<'EOF_MANGO' > /etc/mango/config.conf
 # System-wide MangoWM Configuration
 exec-once = noctalia
 
-# Visual Effects (SceneFX) - Optimized for performance/battery
+# Visual Effects (SceneFX)
 blur = 1
 shadows = 1
 blur_layer = 0
@@ -66,7 +58,7 @@ shadows_size = 4
 shadows_blur = 12
 shadowscolor = 0x000000ff
 
-# Premium Laptop Touchpad Defaults
+# Laptop Touchpad Defaults
 tap_to_click = 1
 tap_and_drag = 1
 trackpad_natural_scrolling = 1
@@ -74,7 +66,7 @@ disable_while_typing = 1
 scroll_method = 1
 click_method = 2
 
-# Load vendor drop-in configurations
+# Load drop-in configurations
 source = /usr/share/mango/config.d/10-noctalia-binds.conf
 EOF_MANGO
 
@@ -98,26 +90,25 @@ bind = NONE, XF86AudioNext, spawn, noctalia msg media next
 bind = NONE, XF86AudioPrev, spawn, noctalia msg media previous
 
 # Session & Power
-bind = SUPER_SHIFT, l, spawn, noctalia msg session lock
-bind = SUPER_SHIFT, e, spawn, noctalia msg panel-toggle session
-bind = SUPER_SHIFT, c, spawn, noctalia msg caffeine-toggle
-bind = SUPER_SHIFT, n, spawn, noctalia msg nightlight-toggle
-bind = SUPER_SHIFT, w, spawn, noctalia msg wifi-toggle
-bind = SUPER_SHIFT, b, spawn, noctalia msg bluetooth-toggle
+bind = SUPER SHIFT, l, spawn, noctalia msg session lock
+bind = SUPER SHIFT, e, spawn, noctalia msg panel-toggle session
+bind = SUPER SHIFT, c, spawn, noctalia msg caffeine-toggle
+bind = SUPER SHIFT, n, spawn, noctalia msg nightlight-toggle
+bind = SUPER SHIFT, w, spawn, noctalia msg wifi-toggle
+bind = SUPER SHIFT, b, spawn, noctalia msg bluetooth-toggle
 
 # Screenshots & Clipboard
 bind = NONE, Print, spawn, noctalia msg screenshot-fullscreen
-bind = SUPER_SHIFT, s, spawn, noctalia msg screenshot-region
+bind = SUPER SHIFT, s, spawn, noctalia msg screenshot-region
 bind = SUPER, v, spawn, noctalia msg panel-toggle clipboard
 
 # Window Management
 bind = SUPER, q, killclient
-bind = SUPER_SHIFT, q, killclient, force
+bind = SUPER SHIFT, f, togglefloating
 bind = SUPER, f, togglefullscreen
-bind = SUPER_SHIFT, f, togglefloating
-bind = SUPER_SHIFT, r, reload_config
+bind = SUPER SHIFT, r, reload_config
 
-# Tags (Ctrl+1-9 to view, Ctrl+Shift+1-9 to move)
+# Tags
 bind = CTRL, 1, view, 1
 bind = CTRL, 2, view, 2
 bind = CTRL, 3, view, 3
@@ -128,15 +119,15 @@ bind = CTRL, 7, view, 7
 bind = CTRL, 8, view, 8
 bind = CTRL, 9, view, 9
 
-bind = CTRL_SHIFT, 1, tag, 1
-bind = CTRL_SHIFT, 2, tag, 2
-bind = CTRL_SHIFT, 3, tag, 3
-bind = CTRL_SHIFT, 4, tag, 4
-bind = CTRL_SHIFT, 5, tag, 5
-bind = CTRL_SHIFT, 6, tag, 6
-bind = CTRL_SHIFT, 7, tag, 7
-bind = CTRL_SHIFT, 8, tag, 8
-bind = CTRL_SHIFT, 9, tag, 9
+bind = CTRL SHIFT, 1, tag, 1
+bind = CTRL SHIFT, 2, tag, 2
+bind = CTRL SHIFT, 3, tag, 3
+bind = CTRL SHIFT, 4, tag, 4
+bind = CTRL SHIFT, 5, tag, 5
+bind = CTRL SHIFT, 6, tag, 6
+bind = CTRL SHIFT, 7, tag, 7
+bind = CTRL SHIFT, 8, tag, 8
+bind = CTRL SHIFT, 9, tag, 9
 
 # Focus movement
 bind = ALT, Left, focusdir, left
@@ -145,13 +136,9 @@ bind = ALT, Up, focusdir, up
 bind = ALT, Down, focusdir, down
 EOF_BINDS
 
-# 4. Noctalia Config (Disable double-shadows)
+# 4. Noctalia Config
 mkdir -p /etc/noctalia
 cat <<'EOF_NOCTALIA' > /etc/noctalia/config.toml
-# System-wide Noctalia Default Configuration
-# Disable Noctalia-rendered shadows to avoid double-shadow artifacts
-# since MangoWM handles them globally via SceneFX.
-
 [bar.main]
 shadow = false
 contact_shadow = false
@@ -164,12 +151,8 @@ shadow = false
 EOF_NOCTALIA
 
 echo ""
-echo "✅ Pure Conversion Complete!"
+echo "✅ Conversion Complete!"
 echo "---------------------------------------------------------"
-echo "1. Log out of your current GNOME session (or reboot)."
-echo "2. At the GDM login screen, click the gear icon (bottom right)."
-echo "3. Select 'MangoWM'."
-echo "4. Log in and enjoy your new setup!"
+echo "1. Log out or reboot."
+echo "2. At GDM login, select 'MangoWM' from the gear icon."
 echo "---------------------------------------------------------"
-echo "💡 Tip: Your GNOME session is still there. Just pick 'GNOME'"
-echo "   from the gear menu anytime you want to switch back."
